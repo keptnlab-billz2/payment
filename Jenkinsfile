@@ -6,7 +6,8 @@ def tagMatchRules = [
       [meType: 'SERVICE']
     ],
     tags : [
-      [context: 'CONTEXTLESS', key: 'app', value: 'payment'],
+      [context: 'CONTEXTLESS', key: 'app', value: 'sockshop'],
+      [context: 'CONTEXTLESS', key: 'service', value: 'payment'],
       [context: 'CONTEXTLESS', key: 'environment', value: 'dev']
     ]
   ]
@@ -17,8 +18,8 @@ pipeline {
     label 'golang2'
   }
   environment {
-    APP_NAME = "payment"
-    ARTEFACT_ID = "sockshop/" + "${env.APP_NAME}"
+    SERVICE_NAME = "payment"
+    ARTEFACT_ID = "sockshop/" + "${env.SERVICE_NAME}"
     VERSION = readFile('version').trim()
     TAG = "${env.DOCKER_REGISTRY_URL}:5000/library/${env.ARTEFACT_ID}"
     TAG_DEV = "${env.TAG}-${env.VERSION}-${env.BUILD_NUMBER}"
@@ -115,8 +116,8 @@ pipeline {
           script {
             def status = executeJMeter ( 
               scriptName: 'jmeter/basiccheck.jmx',
-              resultsDir: "HealthCheck_${env.APP_NAME}",
-              serverUrl: "${env.APP_NAME}.dev", 
+              resultsDir: "HealthCheck_${env.SERVICE_NAME}",
+              serverUrl: "${env.SERVICE_NAME}.dev", 
               serverPort: 80,
               checkPath: '/health',
               vuCount: 1,
@@ -143,9 +144,9 @@ pipeline {
         container('jmeter') {
           script {
             def status = executeJMeter (  
-              scriptName: "jmeter/${env.APP_NAME}_load.jmx",
-              resultsDir: "FuncCheck_${env.APP_NAME}",
-              serverUrl: "${env.APP_NAME}.dev", 
+              scriptName: "jmeter/${env.SERVICE_NAME}_load.jmx",
+              resultsDir: "FuncCheck_${env.SERVICE_NAME}",
+              serverUrl: "${env.SERVICE_NAME}.dev", 
               serverPort: 80,
               checkPath: '/health',
               vuCount: 1,
@@ -185,7 +186,7 @@ pipeline {
       steps {
         build job: "k8s-deploy-staging",
           parameters: [
-            string(name: 'APP_NAME', value: "${env.APP_NAME}"),
+            string(name: 'SERVICE_NAME', value: "${env.SERVICE_NAME}"),
             string(name: 'TAG_STAGING', value: "${env.TAG_STAGING}"),
             string(name: 'VERSION', value: "${env.VERSION}")
           ]
